@@ -1,5 +1,7 @@
 import requests
+from common import Auction
 from utils import get_top_five_auction_map
+from db import save_auctions
 
 access_token = "USmsgQH1KknMiHHTzjzrl9X5mqoGDN26zq" # valid for 24 hours
 region = "us"
@@ -9,9 +11,21 @@ commodities_endpoint = "/data/wow/auctions/commodities"
 
 
 def get_all_auctions():
+    # TODO: Connect to database
+    # If the last updated at is > 1 hour, pull from API, otherwise use the DB
     url = f"{base_url}{commodities_endpoint}?namespace={namespace}&locale=en_US&access_token={access_token}"
     resp = requests.get(url)
-    return resp.json()['auctions']
+
+    auctions = [
+        Auction(
+            item_id=auction['item']['id'],
+            quantity=auction['quantity'],
+            price=auction['unit_price']
+        )
+        for auction in resp.json()['auctions']
+    ]
+
+    
 
 ALL_AUCTIONS = get_all_auctions()
 

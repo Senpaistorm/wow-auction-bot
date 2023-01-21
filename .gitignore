@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 .access_token.sh
+auctions.db
