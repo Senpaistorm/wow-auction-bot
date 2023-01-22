@@ -15,4 +15,16 @@ def get_top_five_auction_map(auctions, filters):
             key=lambda x:x[0]
         )[:5]
 
-    return auction_map
+    avg_price = {}
+    for item_id, prices in auction_map.items():
+        sum = 0
+        total_quantity = 0
+        for price, quantity in prices:
+            sum += price * quantity
+            total_quantity += quantity
+        avg_price[item_id] = sum / total_quantity
+
+    print(avg_price)
+
+    return avg_price
+
