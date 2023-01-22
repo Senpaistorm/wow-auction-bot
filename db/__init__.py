@@ -1,29 +1,69 @@
-import sqlite3
-from common import Auction
-con = sqlite3.connect("auctions.db")
+import mysql.connector
 
-cur = con.cursor()
+def connect_db():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="xiangli",
+        password="",
+        database="mydatabase"
+    )
+    return db
 
-res = cur.execute("SELECT name FROM sqlite_master").fetchone()
-if 'auctions' not in res:
-    cur.execute("CREATE TABLE auctions(id, quantity, price, updated_at)")
+def create_db():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="xiangli",
+        password="",
+    )
+    cur = db.cursor()
+    cur.execute("CREATE DATABASE mydatabase")
 
-cur.execute("""
-    INSERT INTO auctions VALUES
-        (1, 'test name', 8.2)
-    """
-)
+db = connect_db()
+if not db:
+    create_db()
+    db = connect_db()
+cursor = db.cursor(buffered=True)
+cursor.reset()
 
-res = cur.execute("SELECT * FROM auctions").fetchall()
-print(res)
+cursor.execute("CREATE TABLE IF NOT EXISTS access_token (id TINYINT, updated_at DATETIME(0), access_token VARCHAR(255), PRIMARY KEY (id))")
+cursor.execute("CREATE TABLE IF NOT EXISTS auction_price (id INT(11), updated_at DATETIME(0), avg_price FLOAT(2), PRIMARY KEY (id))")
 
-def get_last_updated_at():
-    pass
+def save_access_token(access_token):
+    sql = ("""
+        INSERT INTO access_token
+            (id, updated_at, access_token)
+            values
+            (1, current_timestamp, %s)
+    """)
+    cursor.execute(sql, (access_token,))
+    db.commit()
 
-def save_auctions(auctions):
-    data = [
-        (auction.item_id, auction.quantity, auction.price)
-        for auction in auctions
-    ]
-    cur.executemany("INSERT INTO auctions VALUES(?, ?, ?, current_timestamp)", data)
-    con.commit()  # Remember to commit the transaction after executing INSERT.
+def get_access_token():
+    cursor.execute("""
+        select * from access_token
+    """)
+    result = cursor.fetchone()
+    return result
+
+
+def save_auctions(auction_map):
+    sql = ("""
+        INSERT INTO auction_price
+            (id, updated_at, avg_price)
+            values
+            (%s, current_timestamp, %s)
+    """)
+    values = [(k, v) for k, v in auction_map.items()]
+    cursor.executemany(sql, values)
+    db.commit()
+
+def get_auction(item_id):
+    sql = ("""
+        select updated_at, avg_price from auction_price
+        where id = %s
+    """)
+    cursor.execute(sql, (item_id,))
+    result = cursor.fetchone()
+    if not result:
+        return None, None
+    return result
