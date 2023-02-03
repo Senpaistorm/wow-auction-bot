@@ -34,6 +34,8 @@ def save_access_token(access_token):
             (id, updated_at, access_token)
             values
             (1, current_timestamp, %s)
+        ON DUPLICATE KEY UPDATE
+            updated_at = VALUES(updated_at), access_token = VALUES(access_token)
     """)
     cursor.execute(sql, (access_token,))
     db.commit()
@@ -52,6 +54,8 @@ def save_auctions(auction_map):
             (id, updated_at, avg_price)
             values
             (%s, current_timestamp, %s)
+        ON DUPLICATE KEY UPDATE
+            updated_at = VALUES(updated_at), avg_price = VALUES(avg_price)
     """)
     values = [(k, v) for k, v in auction_map.items()]
     cursor.executemany(sql, values)
